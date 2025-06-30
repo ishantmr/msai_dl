@@ -25,7 +25,12 @@ class ClassificationLoss(nn.Module):
         Returns:
             tensor, scalar loss
         """
-        raise NotImplementedError("ClassificationLoss.forward() is not implemented")
+        out = nn.CrossEntropyLoss()
+        
+        return out(logits, target)
+        #return self._forward(logits, target)
+
+        #raise NotImplementedError("ClassificationLoss.forward() is not implemented")
 
 
 class LinearClassifier(nn.Module):
@@ -41,9 +46,11 @@ class LinearClassifier(nn.Module):
             w: int, width of the input image
             num_classes: int, number of classes
         """
+        self.linear = nn.Linear(h * w * 3, num_classes)
         super().__init__()
+    
 
-        raise NotImplementedError("LinearClassifier.__init__() is not implemented")
+        #raise NotImplementedError("LinearClassifier.__init__() is not implemented")
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -53,7 +60,9 @@ class LinearClassifier(nn.Module):
         Returns:
             tensor (b, num_classes) logits
         """
-        raise NotImplementedError("LinearClassifier.forward() is not implemented")
+        x = self.linear(x)
+        return x
+        #raise NotImplementedError("LinearClassifier.forward() is not implemented")
 
 
 class MLPClassifier(nn.Module):
@@ -71,9 +80,12 @@ class MLPClassifier(nn.Module):
             w: int, width of the input image
             num_classes: int, number of classes
         """
+        self.linear1 = nn.Linear(h * w * 3, 128)  # Example hidden layer size
+        self.relu = nn.ReLU()
         super().__init__()
 
-        raise NotImplementedError("MLPClassifier.__init__() is not implemented")
+
+        #raise NotImplementedError("MLPClassifier.__init__() is not implemented")
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -83,7 +95,12 @@ class MLPClassifier(nn.Module):
         Returns:
             tensor (b, num_classes) logits
         """
-        raise NotImplementedError("MLPClassifier.forward() is not implemented")
+        x = x.view(x.size(0), -1)  # Flatten the input
+        x = self.linear1(x)  # Apply the first linear layer
+        x = self.relu(x)
+        x = self.linear1(x)  # Apply the second linear layer
+        return x
+        #raise NotImplementedError("MLPClassifier.forward() is not implemented")
 
 
 class MLPClassifierDeep(nn.Module):
