@@ -46,6 +46,9 @@ def train(
     # create loss function and optimizer
     loss_func = ClassificationLoss()
     # optimizer = ...
+    # optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+
 
     global_step = 0
     metrics = {"train_acc": [], "val_acc": []}
@@ -62,7 +65,21 @@ def train(
             img, label = img.to(device), label.to(device)
 
             # TODO: implement training step
-            raise NotImplementedError("Training step not implemented")
+            # forward pass
+            logits = model(img)
+            # compute loss
+            loss = loss_func(logits, label)
+            # backward pass
+            optimizer.zero_grad()
+            loss.backward()
+            # update weights
+            optimizer.step()
+            # compute accuracy
+            acc = (logits.argmax(dim=1) == label).float().mean().item
+            metrics["train_acc"].append(acc)
+            
+            
+            #raise NotImplementedError("Training step not implemented")
 
             global_step += 1
 
