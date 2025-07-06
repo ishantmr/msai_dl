@@ -46,9 +46,7 @@ def train(
     # create loss function and optimizer
     loss_func = ClassificationLoss()
     # optimizer = ...
-    # optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
-
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
     global_step = 0
     metrics = {"train_acc": [], "val_acc": []}
@@ -65,20 +63,18 @@ def train(
             img, label = img.to(device), label.to(device)
 
             # TODO: implement training step
-            # forward pass
-            logits = model(img)
-            # compute loss
-            loss = loss_func(logits, label)
-            # backward pass
+            out = model(img)
+            loss = loss_func(out, label)
+            if loss.dim() > 0:
+                loss = loss.mean()
             optimizer.zero_grad()
             loss.backward()
-            # update weights
             optimizer.step()
-            # compute accuracy
-            acc = (logits.argmax(dim=1) == label).float().mean().item
-            metrics["train_acc"].append(acc)
-            
-            
+
+            # Compute and store training accuracy
+            train_acc = (out.argmax(dim=1) == label).float().mean().item()
+            metrics["train_acc"].append(train_acc)
+
             #raise NotImplementedError("Training step not implemented")
 
             global_step += 1
@@ -91,13 +87,19 @@ def train(
                 img, label = img.to(device), label.to(device)
 
                 # TODO: compute validation accuracy
-                raise NotImplementedError("Validation accuracy not implemented")
+                out = model(img)
+                val_loss = loss_func(out, label)
+                metrics["val_acc"].append((out.argmax(dim=1) == label).float().mean().item())
+                #raise NotImplementedError("Validation accuracy not implemented")
 
         # log average train and val accuracy to tensorboard
         epoch_train_acc = torch.as_tensor(metrics["train_acc"]).mean()
         epoch_val_acc = torch.as_tensor(metrics["val_acc"]).mean()
 
-        raise NotImplementedError("Logging not implemented")
+        logger.add_scalar("train_acc", epoch_train_acc, global_step)
+        logger.add_scalar("val_acc", epoch_val_acc, global_step)
+
+        #raise NotImplementedError("Logging not implemented")
 
         # print on first, last, every 10th epoch
         if epoch == 0 or epoch == num_epoch - 1 or (epoch + 1) % 10 == 0:
@@ -111,6 +113,7 @@ def train(
     save_model(model)
 
     # save a copy of model weights in the log directory
+    log_dir.mkdir(parents=True, exist_ok=True)
     torch.save(model.state_dict(), log_dir / f"{model_name}.th")
     print(f"Model saved to {log_dir / f'{model_name}.th'}")
 
