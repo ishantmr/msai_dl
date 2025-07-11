@@ -7,6 +7,21 @@ HOMEWORK_DIR = Path(__file__).resolve().parent
 INPUT_MEAN = [0.2788, 0.2657, 0.2629]
 INPUT_STD = [0.2064, 0.1944, 0.2252]
 
+class ClassificationLoss(nn.Module):
+    def forward(self, logits: torch.Tensor, target: torch.LongTensor) -> torch.Tensor:
+        """
+        Multi-class classification loss
+        Hint: simple one-liner
+
+        Args:
+            logits: tensor (b, c) logits, where c is the number of classes
+            target: tensor (b,) labels
+
+        Returns:
+            tensor, scalar loss
+        """
+        return nn.CrossEntropyLoss()(logits, target)
+        #raise NotImplementedError("ClassificationLoss.forward() is not implemented")
 
 class Classifier(nn.Module):
     def __init__(
@@ -27,7 +42,34 @@ class Classifier(nn.Module):
         self.register_buffer("input_std", torch.as_tensor(INPUT_STD))
 
         # TODO: implement
-        pass
+        self.features = nn.Sequential(
+            nn.Conv2d(in_channels, 32, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.BatchNorm2d(32),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+
+            nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.BatchNorm2d(64),
+            nn.MaxPool2d(kernel_size=2, stride=2)
+        )
+
+        self.classifier = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(64 * 16 * 16, 256), 
+            nn.ReLU(),      
+            nn.Dropout(0.4),
+
+            nn.Linear(256, 128),
+            nn.ReLU(),
+            nn.Dropout(0.4),
+
+            nn.Linear(128, num_classes)
+        )
+         
+
+
+        
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -41,7 +83,11 @@ class Classifier(nn.Module):
         z = (x - self.input_mean[None, :, None, None]) / self.input_std[None, :, None, None]
 
         # TODO: replace with actual forward pass
-        logits = torch.randn(x.size(0), 6)
+        features = self.features(z)
+        logits = self.classifier(features)  
+
+
+        #logits = torch.randn(x.size(0), 6)
 
         return logits
 
@@ -57,6 +103,7 @@ class Classifier(nn.Module):
         Returns:
             pred (torch.LongTensor): class labels {0, 1, ..., 5} with shape (b, h, w)
         """
+    
         return self(x).argmax(dim=1)
 
 
