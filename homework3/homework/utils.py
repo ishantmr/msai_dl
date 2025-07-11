@@ -25,7 +25,7 @@ class SuperTuxDataset(Dataset):
                     image = Image.open(Path(dataset_path, fname))
                     label_id = LABEL_NAMES.index(label)
 
-                    self.data.append((to_tensor(image).reshape(-1, 3, 64, 64), label_id))
+                    self.data.append((to_tensor(image).reshape(3, 64, 64), label_id))
 
     def __len__(self):
         return len(self.data)
